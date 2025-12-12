@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-We propose to develop and open-source `@near-wallet-selector/privy`, a production-ready wallet adapter that integrates Privy's embedded wallets into the NEAR wallet-selector ecosystem. This public good will eliminate significant friction for developers building user-friendly dApps by providing seamless email-based authentication without requiring custom cryptographic implementation on each attempt to use Privy with Near Protocol.
+We propose to develop and open-source `@peerfolio/privy-near-adapter`, a production-ready wallet adapter that integrates Privy's embedded wallets into both the NEAR wallet-selector ecosystem and the emerging hot-connect (near-connect) standard. This public good will eliminate significant friction for developers building user-friendly dApps by providing seamless email-based authentication without requiring custom cryptographic implementation on each attempt to use Privy with Near Protocol.
 
 ## Problem Statement
 
@@ -35,7 +35,9 @@ While Privy announced NEAR Protocol support in August 2025, it remains a Tier 2 
 
 ### Overview
 
-Create `@near-wallet-selector/privy` - a production-ready, open-source wallet adapter following NEAR's wallet-selector standards ([NEP-408](https://github.com/near/NEPs/blob/master/neps/nep-0408.md), [NEP-368](https://github.com/near/NEPs/pull/368)), enabling developers to integrate Privy with a single function call:
+Create `@peerfolio/privy-near-adapter` - a production-ready, open-source wallet adapter following NEAR's wallet-selector standards ([NEP-408](https://github.com/near/NEPs/blob/master/neps/nep-0408.md), [NEP-368](https://github.com/near/NEPs/pull/368)), enabling developers to integrate Privy with minimal custom code:
+
+**Wallet Selector Integration:**
 
 ```typescript
 const walletSelectorConfig = {
@@ -47,11 +49,24 @@ const walletSelectorConfig = {
   ],
 };
 ```
+
+
+**Hot-Connect Integration:**
+
+```typescript
+// App.tsx
+import { NearConnector } from '@hot-labs/near-connect';
+import '@peerfolio/privy-near-adapter';
+
+const connector = new NearConnector({ network: 'mainnet' });
+```
+
+
 plus the addition of a client application's registered Privy credentials added into the context
 
 ```typescript
 // App.tsx
-import { PrivyAuthProvider, PrivyWalletBridge } from '@/utils/privy-wallet-selector';
+import { PrivyAuthProvider, PrivyWalletBridge } from '@peerfolio/privy-near-adapter';
 
 function App() {
   return (
@@ -67,6 +82,7 @@ function App() {
 }
 ```
 
+
 ### Architecture
 
 The adapter follows the **browser wallet pattern** used by MyNEARWallet:
@@ -79,15 +95,46 @@ The adapter follows the **browser wallet pattern** used by MyNEARWallet:
 **Key Components:**
 
 ```
-PrivyProvider (Privy SDK)
-    ↓
-PrivyAuthProvider (Unified React Context)
-    ↓
-WalletSelectorProvider (NEAR wallet-selector)
-    ↓
-PrivyWalletBridge (Event handling)
-    ↓
-Application Code (Standard wallet-selector API)
+┌─────────────────────────────────────────────────────┐
+│                  Application Layer                  |
+│         (Your dApp - (wallet-selector APIs)         |
+|             • transaction callback route & UI       │
+└────────────────────┬────────────────────────────────┘
+                     │
+        ┌────────────┴────────────┐
+        ▼                         ▼
+┌───────────────────┐    ┌───────────────────┐
+│  near-wallet      │    │   Hot-Connect     │
+│  selector         │    │                   │
+│  setupPrivyWallet │    │  Event injection  │
+└────────┬──────────┘    └────────┬──────────┘
+         │                        │
+         └──────────┬─────────────┘
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│         @peerfolio/privy-near-adapter               │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  PrivyNearWallet                              │  │
+│  │  • signIn / signOut                           │  │
+│  │  • signMessage (NEP-413)                      │  │
+│  │  • signAndSendTransaction(s)                  │  │
+│  └───────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  PrivyWalletBridge                            │  │
+│  │  • Detect hot-connect's 'near-selector-ready' │  │
+│  │  • Dispatch 'near-wallet-injected'            │  │
+│  │  • Sync between privy and wallet-selector     │  │
+│  └───────────────────────────────────────────────┘  │
+└────────────────────┬────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────┐
+│         Privy SDK (@privy-io/react-auth)            │
+│  • User authentication                              │
+│  • Embedded wallet creation                         │
+│  • Private key management                           │
+│  • Signing UI components                            │
+└─────────────────────────────────────────────────────┘
+
 ```
 
 ### Security Model
@@ -121,13 +168,12 @@ We have successfully implemented this solution in production at Peerfolio (close
 
 - ✅ Package published to NPM with semantic versioning
 - ✅ 3+ production dApps integrate the adapter within 1 month
-- ✅ Submission accepted to official near/wallet-selector repository
 - ✅ 80%+ test coverage with comprehensive integration tests
 - ✅ Documentation rated "clear" by 90%+ of surveyed developers
 
 ## Deliverables
 
-### 1. NPM Package: `@near-wallet-selector/privy`
+### 1. NPM Package: `@peerfolio/privy-near-adapter`
 
 **Features:**
 - Complete wallet-selector interface implementation
@@ -136,18 +182,48 @@ We have successfully implemented this solution in production at Peerfolio (close
 - Network switching (mainnet/testnet)
 - TypeScript definitions
 
+**Wallet-Selector Support:**
+- setupPrivyWallet() module factory
+- PrivyAuthProvider React context
+- PrivyWalletBridge event handler
+
+**Hot-Connect Support:**
+- Auto-detection of near-selector-ready event
+- Injection via near-wallet-injected custom event
+- Manifest configuration for hot-connect registry
+
 **License**: MIT (consistent with wallet-selector ecosystem)
 
+
 ### 2. Comprehensive Documentation
+Submit PR to hot-connect repository adding `privy-wallet` to repository/manifest.json:
+```
+{
+  "id": "privy-wallet",
+  "name": "Privy",
+  "description": "Email & social login with embedded NEAR wallet",
+  "icon": "https://...",
+  "type": "injected",
+  "features": {
+    "signMessage": true,
+    "signAndSendTransaction": true,
+    "signAndSendTransactions": true,
+    "signInWithoutAddKey": true
+  }
+}
+```
+
+### 3. Comprehensive Documentation
 
 **Developer Docs** (`/docs`):
-- Quick start guide (5-minute integration)
+- Quick start guide for wallet-selector integration
+- Quick start guide for hot-connect integration
 - API reference (all methods, types, options)
 - Architecture overview (with diagrams)
 - Security considerations
 - FAQ
 
-### 3. Reference dApp
+### 4. Reference dApp
 
 **Interactive Demo** (`/demo-app`):
 - Email-based login/logout
@@ -158,7 +234,7 @@ We have successfully implemented this solution in production at Peerfolio (close
 
 **Hosted**: Live demo at `privy-adapter.vercel.app` (or similar)
 
-### 4. Test Suite
+### 5. Test Suite
 
 **Coverage Target**: >80%
 
@@ -166,7 +242,7 @@ We have successfully implemented this solution in production at Peerfolio (close
 - Integration tests for signing flows
 - E2E tests for complete user journeys
 
-### 5. Community Support
+### 6. Community Support
 
 - **Office Hours**: 1 sessions per week during the first month post-launch, for developer Q&A
 - **Blog Post**: Technical deep-dive explaining architecture and design decisions
@@ -175,35 +251,35 @@ We have successfully implemented this solution in production at Peerfolio (close
 
 ## Timeline
 
-**Total Duration**: 6 weeks
+**Total Duration**: 8 weeks
 
 **Key Dates**:
 - Week 0-2: Project kickoff, near-wallet-selector integration standards complete
-- Week 2-3: Open Source Standards complete
-- Week 3-4: Testing & Documentation complete
-- Week 4: Public release
-- Week 5-6: Iteration based on reasonable feedback
+- Week 2-4: Hot-connect auto-detection & injection
+- Week 3-4: Testing and hot-connect manifest PR
+- Week 6: Public release, Documentation complete
+- Week 6-8: Iteration based on reasonable feedback.
 
 ## Budget Request
 
-**Total Budget**: $36,250 USD
+**Total Budget**: $48,000 USD
 
 ### Budget Breakdown
 
 | Category | Hours | Rate | Total |
 |----------|-------|------|-------|
-| **Development** | 180 | $125/hr | $22,500 |
-| **Testing & QA** | 50 | $125/hr | $6,250 |
+| **Development** | 260 | $125/hr | $32,500 |
+| **Testing & QA** | 64 | $125/hr | $8,000 |
 | **Community Support** | 40 | $125/hr | $5,000 |
 | **Documentation** | 20 | $125/hr | $2,500 |
-| **Total** | 290 | - | **$37,000** |
+| **Total** | 384 | - | **$48,000** |
 
 
 ### Payment Schedule
 
-- **30% upfront** ($10,875): Upon project approval
-- **40% at midpoint** ($14,500): Week 3 - Core features complete, tests written
-- **30% at completion** ($10,875): Week 6 - Package published, documentation live, PR submitted
+- **30% upfront** ($14,400): Upon project approval
+- **40% at midpoint** ($19,200): Week 4 - near-wallet-selector support published
+- **30% at completion** ($14,400): Week 8 - hot-connect support, final docs, and PRs published.
 
 ## Team & Qualifications
 
@@ -231,8 +307,8 @@ We have successfully implemented this solution in production at Peerfolio (close
 
 **Adoption** (3 months post-launch):
 - ✅ 3+ production dApps using the adapter
-- ✅ 500+ NPM downloads per month
-- ✅ 50+ GitHub stars
+- ✅ 10+ NPM downloads per month
+- ✅ 5+ GitHub stars
 
 **Quality**:
 - ✅ 80%+ test coverage
@@ -261,6 +337,7 @@ We have successfully implemented this solution in production at Peerfolio (close
 - [NEP-408: Injected Wallet Standards](https://github.com/near/NEPs/blob/master/neps/nep-0408.md)
 - [NEP-368: Bridged Wallet Standards](https://github.com/near/NEPs/pull/368)
 - [Existing Wallet Adapters](https://github.com/near/wallet-selector/tree/main/packages)
+- [near connect](https://github.com/azbang/near-connect)
 
 ### Similar Implementations
 - [MyNEARWallet Adapter](https://github.com/near/wallet-selector/blob/main/packages/my-near-wallet) - Reference for browser wallet pattern
@@ -268,59 +345,17 @@ We have successfully implemented this solution in production at Peerfolio (close
 - [FastAuth](https://github.com/near/fastauth-wallet) - Similar goals for email-based auth
 
 
+## Answered Questions
+1. Is there existing work on embedded wallet adapters we should coordinate with? design to support hot-connect.
+
+
 ## Questions for Committee
+1. **Early Adopters**: Which NEAR dApps might be interested in early adoption/testing? Can the committee facilitate introductions?
 
-1. **Coordination**: Is there existing work on embedded wallet adapters we should coordinate with?
+1. **Privy Partnership**: Is the committee aware of any plans for Privy to build Tier 3 support for NEAR?
 
-2. **Early Adopters**: Which NEAR dApps might be interested in early adoption/testing? Can the committee facilitate introductions?
-
-3. **Privy Partnership**: Is the committee aware of any plans for Privy to build Tier 3 support for NEAR?
-
-4. **Security Review**: What security review process is required for wallet adapters before official inclusion?
+1. **Security Review**: What security review process is required for wallet adapters before official inclusion?
 
 5. **Maintenance**: After initial development, is there infrastructure committee support for ongoing maintenance grants?
-
-
-
----
-
-## Appendix: Technical Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────┐
-│                  Application Layer                  │
-│  (Your dApp - uses standard wallet-selector APIs)   │
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│            NEAR Wallet Selector Core                │
-│    (Standard interface for all NEAR wallets)       │
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│         @near-wallet-selector/privy                 │
-│  • setupPrivyWallet()                               │
-│  • PrivyAuthProvider (React Context)                │
-│  • PrivyWalletBridge (Event handling)               │
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│              Privy SDK (@privy-io/react-auth)       │
-│  • User authentication                              │
-│  • Embedded wallet creation                         |
-|  • Private Key Management                           |
-│  • Signing UI components                            |
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│                  NEAR Protocol                      |
-│  • Transaction submission                           │
-│  • Network validation                               │
-└─────────────────────────────────────────────────────┘
-```
 
 
