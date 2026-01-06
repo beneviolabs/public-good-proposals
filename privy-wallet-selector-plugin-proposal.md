@@ -1,8 +1,10 @@
-# Privy Plugin for NEAR Wallet Selector
+# Privy Embedded Wallet Adapter for near-connect
 
 ## Executive Summary
 
-We propose to develop and open-source `@near-wallet-selector/privy`, a production-ready wallet adapter that integrates Privy's embedded wallets into the NEAR wallet-selector ecosystem. This public good will eliminate significant friction for developers building user-friendly dApps by providing seamless email-based authentication without requiring custom cryptographic implementation on each attempt to use Privy with Near Protocol.
+We propose to develop and open-source a production-ready Privy embedded wallet adapter for **near-connect** (formerly hot-connect), enabling seamless email-based authentication for NEAR dApps. This public good will eliminate significant friction for developers building user-friendly dApps by providing standardized Privy integration without requiring custom cryptographic implementation on each attempt to use Privy with Near
+Protocol.
+
 
 ## Problem Statement
 
@@ -13,7 +15,7 @@ We propose to develop and open-source `@near-wallet-selector/privy`, a productio
 While Privy announced NEAR Protocol support in August 2025, it remains a Tier 2 chain (compared to Tier 3 for Ethereum and Solana). This means developers must:
 
 1. **Write Custom Cryptographic Code**: Manually implement transaction signing, message signing (NEP-413), and transaction broadcasting
-2. **Create Dual Control Flows**: Maintain separate logic for Privy wallets vs. wallet-selector wallets, introducing conditional branching throughout the application
+2. **Create Dual Control Flows**: Maintain separate logic for Privy wallets vs. standard wallet connections, introducing conditional branching throughout the application
 3. **Spend Significant Time on Boilerplate**: At hackathons and in production, developers lose days building authentication infrastructure instead of core features
 4. **Navigate Fragmented Documentation**: Piece together solutions from multiple sources without standardized patterns
 
@@ -26,7 +28,7 @@ While Privy announced NEAR Protocol support in August 2025, it remains a Tier 2 
 
 **User Expectations**: Mainstream users expect email/social login flows. Privy provides this, but integrating it with NEAR is unnecessarily difficult.
 
-**Developer Experience**: The NEAR wallet-selector is the standard pattern for wallet integration. Not having a Privy adapter forces developers to maintain two parallel authentication systems.
+**Developer Experience**: The near-connect framework is emerging as a streamlined pattern for wallet integration. Not having a Privy adapter forces developers to maintain custom authentication systems if they want to leverage Privy's recent support of Near Protocol.
 
 **Ecosystem Growth**: Reducing onboarding friction by 10x makes NEAR more competitive for consumer-facing applications where embedded wallets are essential.
 
@@ -35,23 +37,27 @@ While Privy announced NEAR Protocol support in August 2025, it remains a Tier 2 
 
 ### Overview
 
-Create `@near-wallet-selector/privy` - a production-ready, open-source wallet adapter following NEAR's wallet-selector standards ([NEP-408](https://github.com/near/NEPs/blob/master/neps/nep-0408.md), [NEP-368](https://github.com/near/NEPs/pull/368)), enabling developers to integrate Privy with a single function call:
+Create a production-ready, open-source Privy wallet adapter for [near-connect](https://github.com/azbang/near-connect), enabling developers to integrate Privy with minimal configuration:
 
 ```typescript
-const walletSelectorConfig = {
-  network: 'mainnet',
-  modules: [
-    setupPrivyWallet(),  // ← The new hotness
-    setupMyNearWallet(),
-    setupMeteorWallet(),
-  ],
-};
+
+// App.tsx
+
+import { NearConnector } from '@hot-labs/near-connect';
+
+import '@peerfolio/privy-near-adapter';
+
+const connector = new NearConnector({ network: 'mainnet' });
+
 ```
+
 plus the addition of a client application's registered Privy credentials added into the context
 
 ```typescript
+
 // App.tsx
-import { PrivyAuthProvider, PrivyWalletBridge } from '@/utils/privy-wallet-selector';
+
+import { PrivyAuthProvider, PrivyWalletBridge } from '@peerfolio/privy-near-adapter';
 
 function App() {
   return (
@@ -69,7 +75,7 @@ function App() {
 
 ### Architecture
 
-The adapter follows the **browser wallet pattern** used by MyNEARWallet:
+The adapter follows the **injected browser wallet pattern**:
 
 1. **Sign Request**: Application calls `wallet.signMessage()` or `wallet.signAndSendTransaction()`
 2. **Modal Navigation**: User navigates to dedicated signing route with request details
@@ -83,11 +89,11 @@ PrivyProvider (Privy SDK)
     ↓
 PrivyAuthProvider (Unified React Context)
     ↓
-WalletSelectorProvider (NEAR wallet-selector)
+NearConnectProvider (near-connect core)
     ↓
 PrivyWalletBridge (Event handling)
     ↓
-Application Code (Standard wallet-selector API)
+Application Code (Standard near-connect API)
 ```
 
 ### Security Model
@@ -99,7 +105,7 @@ Application Code (Standard wallet-selector API)
 
 ### Proof of Concept
 
-We have successfully implemented this solution in production at Peerfolio (closed-source). The implementation:
+We have successfully implemented this solution in production at Peerfolio (closed-source) integrated with near-wallet-selector. The implementation:
 - ✅ Supports NEP-413 message signing
 - ✅ Handles transaction signing and broadcasting
 - ✅ Provides seamless email-based authentication
@@ -108,35 +114,37 @@ We have successfully implemented this solution in production at Peerfolio (close
 
 **Demo**: Available at request - shows complete flow from email login → transaction signing → callback
 
+**Note** Privy's SDK requires local storage for session persistence, so near-connect's sandbox pattern likely wouldn't be feasible without support from Privy. However, with near-connect supporting injected wallets running within the application's context, we will adapt the above prototype to validate that this approach within near-connect's architecture. Detailed in the milestones below.
+
 ## Objectives
 
 ### Primary Objectives
 
-1. **Reduce Developer Friction**: Enable Privy + NEAR integration with <10 lines of code
-2. **Standardize Best Practices**: Provide canonical reference implementation for embedded wallets on NEAR
+1. **Reduce Developer Friction**: Enable Privy + NEAR integration with minimal configuration
+2. **Standardize Best Practices**: Provide canonical reference implementation for embedded wallets on NEAR via near-connect
 3. **Enable Ecosystem Growth**: Lower barrier for consumer-facing dApps to build on NEAR
 4. **Create Reusable Public Good**: Open-source, well-documented, maintainable codebase
 
 ### Success Criteria
 
 - ✅ Package published to NPM with semantic versioning
-- ✅ 3+ production dApps integrate the adapter within 1 month
-- ✅ Submission accepted to official near/wallet-selector repository
+- ✅ 3+ production dApps integrate the adapter within 3 months
+- ✅ Adapter compatible with near-connect (or fallback to wallet-selector if required)
 - ✅ 80%+ test coverage with comprehensive integration tests
 - ✅ Documentation rated "clear" by 90%+ of surveyed developers
 
 ## Deliverables
 
-### 1. NPM Package: `@near-wallet-selector/privy`
+### 1. NPM Package: Privy Adapter for near-connect
 
 **Features:**
-- Complete wallet-selector interface implementation
+- Complete near-connect adapter interface implementation
 - NEP-413 message signing support
 - Transaction signing and broadcasting
 - Network switching (mainnet/testnet)
 - TypeScript definitions
 
-**License**: MIT (consistent with wallet-selector ecosystem)
+**License**: MIT
 
 ### 2. Comprehensive Documentation
 
@@ -156,7 +164,7 @@ We have successfully implemented this solution in production at Peerfolio (close
 - Network switching
 - Error handling demonstrations
 
-**Hosted**: Live demo at `privy-adapter.vercel.app` (or similar)
+**Hosted**: Live demo at a publicly accessible URL
 
 ### 4. Test Suite
 
@@ -166,44 +174,98 @@ We have successfully implemented this solution in production at Peerfolio (close
 - Integration tests for signing flows
 - E2E tests for complete user journeys
 
-### 5. Community Support
+### 5. Community Support (Launch Phase)
 
-- **Office Hours**: 1 sessions per week during the first month post-launch, for developer Q&A
+- **Office Hours**: 1 session per week during the first month post-launch for developer Q&A
 - **Blog Post**: Technical deep-dive explaining architecture and design decisions
-- **12 Months Active Maintanence**: Ongoing maintanence of critical feature requests and issue resolution for the open source repository.
 - **Video Tutorial**: ~10 minute walkthrough of integration process
+
+## Maintenance & Support (12 Months)
+
+This maintenance period is tightly scoped to ensure sustainable, high-quality support.
+
+### Included in Maintenance
+
+- **Critical Bug Fixes**: Issues that prevent core functionality from working
+- **Security Patches**: Addressing vulnerabilities in the adapter code
+- **Dependency Compatibility Updates**: Maintaining compatibility with NEAR, Privy SDK, and near-connect updates
+- **Issue Triage and Response**: Reviewing, categorizing, and responding to reported issues
+
+### Excluded from Maintenance
+
+The following are explicitly outside the scope of this maintenance commitment:
+
+- New feature development
+- Performance optimizations beyond critical fixes
+- Major refactors or architectural changes
+- Support for additional wallet standards or networks
+- Custom integrations or consulting
+
+### Capacity and Response Expectations
+
+- **Monthly Capacity Cap**: ~8 hours per month
+- **Work Beyond Cap**: Any work exceeding this capacity requires a separate written agreement or change order
+- **Issue Acknowledgment**: Within 3 business days
+- **Critical Issue Resolution**: Best-effort resolution within 5 business days
+
+## Compatibility / Fallback Clause
+
+**Primary Target**: near-connect
+
+This proposal targets near-connect as the primary integration framework based on current ecosystem guidance. However, near-connect is a newer framework and we have not yet validated a production prototype against it.
+
+**Validation Commitment**: The Validation Phase (Week 1) will confirm that Privy's signing flows work end-to-end with near-connect.
+
+**Fallback Provision**: If, during validation or subsequent development, we identify blocking incompatibilities that cannot be resolved in collaboration with the near-connect team within 3 months, we may fall back to implementing the adapter for the NEAR wallet-selector (using the Injected wallet standard per NEP-408).
 
 ## Timeline
 
-**Total Duration**: 6 weeks
+**Total Duration**: 7 weeks
 
-**Key Dates**:
-- Week 0-2: Project kickoff, near-wallet-selector integration standards complete
-- Week 2-3: Open Source Standards complete
-- Week 3-4: Testing & Documentation complete
-- Week 4: Public release
-- Week 5-6: Iteration based on reasonable feedback
+| Week | Phase | Activities |
+|------|-------|------------|
+| 1 | **Validation Phase** | Confirm Privy signing flows (message + transaction) work with near-connect. Deliverable: Validated prototype or documented blockers. |
+| 2-3 | Core Development | Implement near-connect adapter, authentication bridge, and core signing flows |
+| 4 | Integration Standards | Achieve 80%+ test coverage, complete developer documentation, satisfy PR expectations |
+| 5 | Quality |  Testing & Documentation complete |
+| 6 | Public Release | NPM publication, demo app deployment, blog post |
+| 7 | Iteration | Address reasonable feedback, refinements based on early adopter input |
+
+**Key Milestones**:
+- Week 1: Validation complete (go/no-go for near-connect)
+- Week 3: Core features complete
+- Week 5: Testing & Documentation complete
+- Week 6: Public release
+- Week 7: Initial feedback incorporated
 
 ## Budget Request
 
-**Total Budget**: $36,250 USD
+**Total Budget**: $45,000 USD
+
+### Budget Rationale
+
+This budget reflects:
+- The addition of a dedicated **Validation Phase** to de-risk near-connect integration
+- An extended **12-month maintenance window** with defined scope and capacity
 
 ### Budget Breakdown
 
 | Category | Hours | Rate | Total |
 |----------|-------|------|-------|
-| **Development** | 180 | $125/hr | $22,500 |
+| **Core Development** | 180 | $125/hr | $22,500 |
+| **Validation Phase** | 40 | $125/hr | $5,000 |
 | **Testing & QA** | 50 | $125/hr | $6,250 |
-| **Community Support** | 40 | $125/hr | $5,000 |
 | **Documentation** | 20 | $125/hr | $2,500 |
-| **Total** | 290 | - | **$37,000** |
+| **Community Support (Launch)** | 20 | $125/hr | $2,500 |
+| **12-Month Maintenance** | 50 | $125/hr | $6,250 |
+| **Total** | **360** | - | **$45,000** |
 
 
 ### Payment Schedule
 
-- **30% upfront** ($10,875): Upon project approval
-- **40% at midpoint** ($14,500): Week 3 - Core features complete, tests written
-- **30% at completion** ($10,875): Week 6 - Package published, documentation live, PR submitted
+- **30% upfront** ($13,500): Upon project approval
+- **40% at midpoint** ($18,000): Week 4 - Core features complete, validation confirmed, tests written
+- **30% at completion** ($13,500): Week 7 - Package published, documentation live, 12-month maintenance period begins
 
 ## Team & Qualifications
 
@@ -237,7 +299,7 @@ We have successfully implemented this solution in production at Peerfolio (close
 **Quality**:
 - ✅ 80%+ test coverage
 - ✅ Zero critical security issues
-- ✅ <24 hour response time to issues
+- ✅ Issue acknowledgment within 3 business days
 
 **Documentation**:
 - ✅ 90%+ developer satisfaction (post-integration survey)
@@ -246,8 +308,8 @@ We have successfully implemented this solution in production at Peerfolio (close
 ### Qualitative Metrics
 
 - **Developer Feedback**: "Made Privy integration 10x easier"
-- **Community Recognition**: Recommended by NEARDev
-- **Ecosystem Impact**: Hackathon and newly onboarded devs choose Privy w/ Near.
+- **Community Recognition**: Recommended by NEAR developer community
+- **Ecosystem Impact**: Hackathon and newly onboarded devs choose Privy with NEAR
 
 ### Sustainability Plan
 
@@ -256,8 +318,12 @@ We have successfully implemented this solution in production at Peerfolio (close
 
 ## References & Prior Art
 
+### near-connect Ecosystem
+- [near-connect (hot-connect)](https://github.com/AhaLabs/near-connect) - Primary integration target
+- near-connect adapter patterns (to be validated during Validation Phase)
+
 ### NEAR Ecosystem
-- [NEAR Wallet Selector Protocol](https://github.com/near/wallet-selector)
+- [NEAR Wallet Selector Protocol](https://github.com/near/wallet-selector) - Fallback integration target
 - [NEP-408: Injected Wallet Standards](https://github.com/near/NEPs/blob/master/neps/nep-0408.md)
 - [NEP-368: Bridged Wallet Standards](https://github.com/near/NEPs/pull/368)
 - [Existing Wallet Adapters](https://github.com/near/wallet-selector/tree/main/packages)
