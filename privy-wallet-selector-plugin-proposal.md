@@ -170,7 +170,7 @@ We have successfully implemented this solution in production at Peerfolio (close
 
 - **Office Hours**: 1 sessions per week during the first month post-launch, for developer Q&A
 - **Blog Post**: Technical deep-dive explaining architecture and design decisions
-- **6 Months Active Maintanence**: Ongoing maintanence of feature requests and issue resolution for the open source repository
+- **12 Months Active Maintanence**: Ongoing maintanence of critical feature requests and issue resolution for the open source repository.
 - **Video Tutorial**: ~10 minute walkthrough of integration process
 
 ## Timeline
@@ -268,17 +268,11 @@ We have successfully implemented this solution in production at Peerfolio (close
 - [FastAuth](https://github.com/near/fastauth-wallet) - Similar goals for email-based auth
 
 
-## Questions for Committee
-
-1. **Coordination**: Is there existing work on embedded wallet adapters we should coordinate with?
-
-2. **Early Adopters**: Which NEAR dApps might be interested in early adoption/testing? Can the committee facilitate introductions?
-
-3. **Privy Partnership**: Is the committee aware of any plans for Privy to build Tier 3 support for NEAR?
-
-4. **Security Review**: What security review process is required for wallet adapters before official inclusion?
-
-5. **Maintenance**: After initial development, is there infrastructure committee support for ongoing maintenance grants?
+## Answered Questions
+1. Is there existing work on embedded wallet adapters we should coordinate with? We should design to support [hot-connect](https://github.com/azbang/near-connect), rather than wallet selector.
+2. Which NEAR dApps might be interested in early adoption/testing?  PingPay, Peerfolio, and it is our responsibility to find others from EcoCollab and directly contacting the Hot Wallet team.
+3. Privy Partnership: Is the committee aware of any plans for Privy to build Tier 3 support for NEAR? No.
+4. **Security Review**: What security review process is required for near-connect adapters before official inclusion? It depends on PR review from the hot-connect team.
 
 
 
