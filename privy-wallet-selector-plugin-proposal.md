@@ -73,6 +73,7 @@ function App() {
 }
 ```
 
+
 ### Architecture
 
 The adapter follows the **injected browser wallet pattern**:
@@ -146,16 +147,36 @@ We have successfully implemented this solution in production at Peerfolio (close
 
 **License**: MIT
 
+
 ### 2. Comprehensive Documentation
+Submit PR to hot-connect repository adding `privy-wallet` to repository/manifest.json:
+```
+{
+  "id": "privy-wallet",
+  "name": "Privy",
+  "description": "Email & social login with embedded NEAR wallet",
+  "icon": "https://...",
+  "type": "injected",
+  "features": {
+    "signMessage": true,
+    "signAndSendTransaction": true,
+    "signAndSendTransactions": true,
+    "signInWithoutAddKey": true
+  }
+}
+```
+
+### 3. Comprehensive Documentation
 
 **Developer Docs** (`/docs`):
-- Quick start guide (5-minute integration)
+- Quick start guide for wallet-selector integration
+- Quick start guide for hot-connect integration
 - API reference (all methods, types, options)
 - Architecture overview (with diagrams)
 - Security considerations
 - FAQ
 
-### 3. Reference dApp
+### 4. Reference dApp
 
 **Interactive Demo** (`/demo-app`):
 - Email-based login/logout
@@ -166,7 +187,7 @@ We have successfully implemented this solution in production at Peerfolio (close
 
 **Hosted**: Live demo at a publicly accessible URL
 
-### 4. Test Suite
+### 5. Test Suite
 
 **Coverage Target**: >80%
 
@@ -293,8 +314,8 @@ This budget reflects:
 
 **Adoption** (3 months post-launch):
 - ✅ 3+ production dApps using the adapter
-- ✅ 500+ NPM downloads per month
-- ✅ 50+ GitHub stars
+- ✅ 10+ NPM downloads per month
+- ✅ 5+ GitHub stars
 
 **Quality**:
 - ✅ 80%+ test coverage
@@ -327,6 +348,7 @@ This budget reflects:
 - [NEP-408: Injected Wallet Standards](https://github.com/near/NEPs/blob/master/neps/nep-0408.md)
 - [NEP-368: Bridged Wallet Standards](https://github.com/near/NEPs/pull/368)
 - [Existing Wallet Adapters](https://github.com/near/wallet-selector/tree/main/packages)
+- [near connect](https://github.com/azbang/near-connect)
 
 ### Similar Implementations
 - [MyNEARWallet Adapter](https://github.com/near/wallet-selector/blob/main/packages/my-near-wallet) - Reference for browser wallet pattern
@@ -339,48 +361,5 @@ This budget reflects:
 2. Which NEAR dApps might be interested in early adoption/testing?  PingPay, Peerfolio, and it is our responsibility to find others from EcoCollab and directly contacting the Hot Wallet team.
 3. Privy Partnership: Is the committee aware of any plans for Privy to build Tier 3 support for NEAR? No.
 4. **Security Review**: What security review process is required for near-connect adapters before official inclusion? It depends on PR review from the hot-connect team.
-
-
-
----
-
-## Appendix: Technical Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────┐
-│                  Application Layer                  │
-│  (Your dApp - uses standard wallet-selector APIs)   │
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│            NEAR Wallet Selector Core                │
-│    (Standard interface for all NEAR wallets)       │
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│         @near-wallet-selector/privy                 │
-│  • setupPrivyWallet()                               │
-│  • PrivyAuthProvider (React Context)                │
-│  • PrivyWalletBridge (Event handling)               │
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│              Privy SDK (@privy-io/react-auth)       │
-│  • User authentication                              │
-│  • Embedded wallet creation                         |
-|  • Private Key Management                           |
-│  • Signing UI components                            |
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│                  NEAR Protocol                      |
-│  • Transaction submission                           │
-│  • Network validation                               │
-└─────────────────────────────────────────────────────┘
-```
 
 
